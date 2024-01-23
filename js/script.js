@@ -14,6 +14,7 @@ let app = new Vue({
     inputThr: null,
     inputFor: null,
     inputFiv: null,
+    isFirstColumnDisabled: false,
   },
   template: `
   <div id="app">
@@ -116,11 +117,16 @@ let app = new Vue({
       );
     },
     isGroupLastItemDisabled() {
-        return this.secondColumn.length === 5 && this.firstColumn.some(group => {
-          const progress = (group.items.filter(item => item.checked).length / group.items.length) * 100;
-          return progress >= 50;
-        });
-      },
+      return this.secondColumn.length === 5 && this.firstColumn.some(group => {
+        const progress = (group.items.filter(item => item.checked).length / group.items.length) * 100;
+        return progress >= 50;
+      });
+    },
+    isDisabled() {
+      return function (groupIndex, item) {
+        return this.isGroupLastItemDisabled;
+      };
+    },
   },
   methods: {
     addCard() {
@@ -140,66 +146,57 @@ let app = new Vue({
         this.groupName = null, this.inputOne = null, this.inputTwo = null, this.inputThr = null, this.inputFor = null, this.inputFiv = null
         this.isFirstColumnDisabled = false;
       },
-      updateProgress(card) {
-        const checkedCount = card.items.filter(item => item.checked).length;
-        const progress = (checkedCount / card.items.length) * 100;
-        card.isComplete = progress === 100;
-        if (card.isComplete) {
-          card.lastChecked = new Date().toLocaleString();
-        }
-        this.checkMoveCard();
-      }, 
-      MoveFirst() {
-        if (this.secondColumn.length >= 5) {
-          const isCardOver50Percent = this.secondColumn.some(card => {
-            const progress = (card.items.filter(item => item.checked).length / card.items.length) * 100;
-            return progress >= 50;
-          });
-  
-          if (isCardOver50Percent) {
-            this.isFirstColumnDisabled = true;
-            this.firstColumn.forEach(card => {
-              card.isDisabled = true;
-            });
-            return;
-          }
-        }
+    updateProgress(card) {
+      const checkedCount = card.items.filter(item => item.checked).length;
+      const progress = (checkedCount / card.items.length) * 100;
+      card.isComplete = progress === 100;
+      if (card.isComplete) {
+        card.lastChecked = new Date().toLocaleString();
+      }
+      this.checkMoveCard();
+    },
+    MoveFirst() {
+      if (this.secondColumn.length >= 5) {
+        const isCardOver50Percent = this.secondColumn.some(card => {
+          const progress = (card.items.filter(item => item.checked).length / card.items.length) * 100;
+          return progress >= 50;
+        });
 
-        this.isFirstColumnDisabled = false;
-        this.firstColumn.forEach(card => {
-          const progress = (card.items.filter(item => item.checked).length / card.items.length) * 100;
-          const isMaxSecondColumn = this.secondColumn.length >= 5;
-          if (progress >= 50 && !isMaxSecondColumn) {
-            this.secondColumn.push(card);
-            this.firstColumn.splice(this.firstColumn.indexOf(card), 1);
-            this.MoveSecond();
-          }
-        });
-      },
-      MoveSecond() {
-        this.secondColumn.forEach(card => {
-          const progress = (card.items.filter(item => item.checked).length / card.items.length) * 100;
-          if (progress === 100) {
-            card.isComplete = true;
-            card.lastChecked = new Date().toLocaleString();
-            this.thirdColumn.push(card);
-            this.secondColumn.splice(this.secondColumn.indexOf(card), 1);
-            this.MoveFirst();
-          }
-        });
-        this.isFirstColumnDisabled = this.secondColumn.length >= 5;
-      },
-      saveData() {
-        const data = {
-          firstColumn: this.firstColumn,
-          secondColumn: this.secondColumn,
-          thirdColumn: this.thirdColumn
-        };
-        localStorage.setItem(storageKey, JSON.stringify(data));
-      },
-      checkMoveCard() {
-        this.MoveFirst();
-        this.MoveSecond();
-      },
+        if (isCardOver50Percent) {
+          this.isFirstColumnDisabled = true;
+          this.firstColumn.forEach(card => {
+            card.isDisabled = true;
+          });
+          return;
+        }
+      }
+
+    },
+
+    MoveSecond() {
+      this.secondColumn.forEach(card => {
+        const progress = (card.items.filter(item => item.checked).length / card.items.length) * 100;
+        if (progress === 100) {
+          card.isComplete = true;
+          card.lastChecked = new Date().toLocaleString();
+          this.thirdColumn.push(card);
+          this.secondColumn.splice(this.secondColumn.indexOf(card), 1);
+          this.MoveFirst();
+        }
+      });
+      this.isFirstColumnDisabled = this.secondColumn.length >= 5;
+    },
+    saveData() {
+      const data = {
+        firstColumn: this.firstColumn,
+        secondColumn: this.secondColumn,
+        thirdColumn: this.thirdColumn
+      };
+      localStorage.setItem(storageKey, JSON.stringify(data));
+    },
+    checkMoveCard() {
+      this.MoveFirst();
+      this.MoveSecond();
+    },
   }
 })
