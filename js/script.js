@@ -62,7 +62,34 @@ let app = new Vue({
     </div>
   </div>
   `,
+  watch: {
+    firstColumn: {
+      handler(newFirstColumn) {
+        this.saveData();
+      },
+      deep: true
+    },
+    secondColumn: {
+      handler(newSecondColumn) {
+        this.saveData();
+      },
+      deep: true
+    },
+    thirdColumn: {
+      handler(newThirdColumn) {
+        this.saveData();
+      },
+      deep: true
+    }
+  },
   computed: {
+    isFormValid() {
+      return (
+        this.groupName !== null &&
+        this.groupName.trim() !== '' &&
+        [this.inputOne, this.inputTwo, this.inputThr, this.inputFor, this.inputFiv].some(input => input !== null && input.trim() !== '')
+      );
+    }
   },
   methods: {
     addCard() {
