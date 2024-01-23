@@ -90,6 +90,21 @@ let app = new Vue({
           card.lastChecked = new Date().toLocaleString();
         }
         this.checkMoveCard();
+      }, MoveFirst() {
+        if (this.secondColumn.length >= 5) {
+          const isCardOver50Percent = this.secondColumn.some(card => {
+            const progress = (card.items.filter(item => item.checked).length / card.items.length) * 100;
+            return progress >= 50;
+          });
+  
+          if (isCardOver50Percent) {
+            this.isFirstColumnDisabled = true;
+            this.firstColumn.forEach(card => {
+              card.isDisabled = true;
+            });
+            return;
+          }
+        }
       },
   }
 })
