@@ -15,76 +15,78 @@ let app = new Vue({
     inputFor: null,
     inputFiv: null,
   },
-  template: ` <div id="app">
-  <form class="addCardForm" @submit.prevent="addCard">
-    <p class="form-p">
-      <label for="GroupName">Название карточки:</label>
-      <input id="GroupName" v-model="groupName">
-    </p>
-    <p class="form-p">
-      <label for="InputOne">Пункт 1:</label>
-      <input id="InputOne" v-model="inputOne">
-    </p>
-    <p class="form-p">
-      <label for="InputTwo">Пункт 2:</label>
-      <input id="InputTwo" v-model="inputTwo">
-    </p>
-    <p class="form-p">
-      <label for="InputThr">Пункт 3:</label>
-      <input id="InputThr" v-model="inputThr">
-    </p>
-    <p class="form-p">
-      <label for="InputFor">Пункт 4:</label>
-      <input id="InputFor" v-model="inputFor">
-    </p>
-    <p class="form-p">
-      <label for="InputFiv">Пункт 5:</label>
-      <input id="InputFiv" v-model="inputFiv">
-    </p>
-    <p class="form-p button">
-      <input type="submit" value="Создать">
-    </p>
-  </form>
-  <div class="columns" style="display: flex; justify-content: space-evenly;">
-    <div class="column">
-      <h2>Первый столбец</h2>
-      <div class="card" v-for="(group, groupIndex) in firstColumn" :key="group.id">
-        <h3>{{ group.groupName }}</h3>
-        <ul>
-          <li v-for="(item , itemIndex) in group.items" :key="item.id">
-            <input type="checkbox" v-model="item.checked"  @change="updateProgress(group)">
-            {{ item.text }}
-          </li>
-        </ul>
+  template: `
+  <div id="app">
+    <form class="addCardForm" @submit.prevent="addCard">
+      <p class="form-p">
+        <label for="GroupName">Название карточки:</label>
+        <input id="GroupName" v-model="groupName">
+      </p>
+      <p class="form-p">
+        <label for="InputOne">Пункт 1:</label>
+        <input id="InputOne" v-model="inputOne">
+      </p>
+      <p class="form-p">
+        <label for="InputTwo">Пункт 2:</label>
+        <input id="InputTwo" v-model="inputTwo">
+      </p>
+      <p class="form-p">
+        <label for="InputThr">Пункт 3:</label>
+        <input id="InputThr" v-model="inputThr">
+      </p>
+      <p class="form-p">
+        <label for="InputFor">Пункт 4:</label>
+        <input id="InputFor" v-model="inputFor">
+      </p>
+      <p class="form-p">
+        <label for="InputFiv">Пункт 5:</label>
+        <input id="InputFiv" v-model="inputFiv">
+      </p>
+      <p class="form-p button">
+        <input type="submit" value="Создать">
+      </p>
+    </form>
+    <div class="columns" style="display: flex; justify-content: space-evenly;">
+      <div class="column">
+        <h2>Первый столбец</h2>
+        <div class="card" v-for="(group, groupIndex) in firstColumn" :key="group.id">
+          <h3>{{ group.groupName }}</h3>
+          <ul>
+            <li v-for="(item , itemIndex) in group.items" :key="item.id">
+              <input type="checkbox" v-model="item.checked" :disabled="isDisabled(groupIndex, item)" @change="updateProgress(group)">
+              {{ item.text }}
+            </li>
+          </ul>
+        </div>
       </div>
-    </div>
-    <div class="column">
-      <h2>Второй столбец</h2>
-      <div class="card" v-for="(group, groupIndex) in secondColumn" :key="group.id">
-        <h3>{{ group.groupName }}</h3>
-        <ul>
-          <li v-for="(item , itemIndex) in group.items" :key="item.id">
-            <input type="checkbox"  v-model="item.checked" @change="updateProgress(group)">
-            {{ item.text }}
-          </li>
-        </ul>
+      <div class="column">
+        <h2>Второй столбец</h2>
+        <div class="card" v-for="(group, groupIndex) in secondColumn" :key="group.id">
+          <h3>{{ group.groupName }}</h3>
+          <ul>
+            <li v-for="(item , itemIndex) in group.items" :key="item.id">
+              <input type="checkbox" :disabled="item.checked" v-model="item.checked" @change="updateProgress(group)">
+              {{ item.text }}
+            </li>
+          </ul>
+        </div>
       </div>
-    </div>
-    <div class="column">
-      <h2>Третий столбец</h2>
-      <div class="card" v-for="group in thirdColumn" :key="group.id">
-        <h3>{{ group.groupName }}</h3>
-        <ul>
-          <li v-for="item in group.items" :key="item.id">
-            <input type="checkbox"  v-model="item.checked">
-            {{ item.text }}
-          </li>
-        </ul>
-        <p v-if="group.isComplete"> {{ group.lastChecked }}</p>
+      <div class="column">
+        <h2>Третий столбец</h2>
+        <div class="card" v-for="group in thirdColumn" :key="group.id">
+          <h3>{{ group.groupName }}</h3>
+          <ul>
+            <li v-for="item in group.items" :key="item.id">
+              <input type="checkbox" :disabled="item.checked" v-model="item.checked">
+              {{ item.text }}
+            </li>
+          </ul>
+          <p v-if="group.isComplete"> {{ group.lastChecked }}</p>
+        </div>
       </div>
     </div>
   </div>
-</div>`,
+  `,
   watch: {
     firstColumn: {
       handler(newFirstColumn) {
@@ -112,7 +114,13 @@ let app = new Vue({
         this.groupName.trim() !== '' &&
         [this.inputOne, this.inputTwo, this.inputThr, this.inputFor, this.inputFiv].some(input => input !== null && input.trim() !== '')
       );
-    }
+    },
+    isGroupLastItemDisabled() {
+        return this.secondColumn.length === 5 && this.firstColumn.some(group => {
+          const progress = (group.items.filter(item => item.checked).length / group.items.length) * 100;
+          return progress >= 50;
+        });
+      },
   },
   methods: {
     addCard() {
@@ -156,6 +164,17 @@ let app = new Vue({
             return;
           }
         }
+
+        this.isFirstColumnDisabled = false;
+        this.firstColumn.forEach(card => {
+          const progress = (card.items.filter(item => item.checked).length / card.items.length) * 100;
+          const isMaxSecondColumn = this.secondColumn.length >= 5;
+          if (progress >= 50 && !isMaxSecondColumn) {
+            this.secondColumn.push(card);
+            this.firstColumn.splice(this.firstColumn.indexOf(card), 1);
+            this.MoveSecond();
+          }
+        });
       },
       MoveSecond() {
         this.secondColumn.forEach(card => {
