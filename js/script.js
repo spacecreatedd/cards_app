@@ -14,11 +14,10 @@ let app = new Vue({
     inputThr: null,
     inputFor: null,
     inputFiv: null,
-    isFirstColumnDisabled: false,
   },
   template: `
   <div id="app">
-    <form class="addCardForm" @submit.prevent="addCard">
+    <form class="addCardForm">
       <p class="form-p">
         <label for="GroupName">Название карточки:</label>
         <input id="GroupName" v-model="groupName">
@@ -50,163 +49,22 @@ let app = new Vue({
     <div class="columns" style="display: flex; justify-content: space-evenly;">
       <div class="column">
         <h2>Первый столбец</h2>
-        <div class="card" v-for="(group, groupIndex) in firstColumn" :key="group.id">
-          <h3>{{ group.groupName }}</h3>
-          <ul>
-            <li v-for="(item , itemIndex) in group.items" :key="item.id">
-              <input type="checkbox" v-model="item.checked" :disabled="isDisabled(groupIndex, item)" @change="updateProgress(group)">
-              {{ item.text }}
-            </li>
-          </ul>
         </div>
       </div>
       <div class="column">
         <h2>Второй столбец</h2>
         <div class="card" v-for="(group, groupIndex) in secondColumn" :key="group.id">
-          <h3>{{ group.groupName }}</h3>
-          <ul>
-            <li v-for="(item , itemIndex) in group.items" :key="item.id">
-              <input type="checkbox" :disabled="item.checked" v-model="item.checked" @change="updateProgress(group)">
-              {{ item.text }}
-            </li>
-          </ul>
         </div>
       </div>
       <div class="column">
         <h2>Третий столбец</h2>
-        <div class="card" v-for="group in thirdColumn" :key="group.id">
-          <h3>{{ group.groupName }}</h3>
-          <ul>
-            <li v-for="item in group.items" :key="item.id">
-              <input type="checkbox" :disabled="item.checked" v-model="item.checked">
-              {{ item.text }}
-            </li>
-          </ul>
-          <p v-if="group.isComplete"> {{ group.lastChecked }}</p>
-        </div>
       </div>
     </div>
   </div>
   `,
-  watch: {
-    firstColumn: {
-      handler(newFirstColumn) {
-        this.saveData();
-      },
-      deep: true
-    },
-    secondColumn: {
-      handler(newSecondColumn) {
-        this.saveData();
-      },
-      deep: true
-    },
-    thirdColumn: {
-      handler(newThirdColumn) {
-        this.saveData();
-      },
-      deep: true
-    }
-  },
   computed: {
-    isFormValid() {
-      return (
-        this.groupName !== null &&
-        this.groupName.trim() !== '' &&
-        [this.inputOne, this.inputTwo, this.inputThr, this.inputFor, this.inputFiv].some(input => input !== null && input.trim() !== '')
-      );
-    },
-    isGroupLastItemDisabled() {
-      return this.secondColumn.length === 5 && this.firstColumn.some(group => {
-        const progress = (group.items.filter(item => item.checked).length / group.items.length) * 100;
-        return progress >= 50;
-      });
-    },
-    isDisabled() {
-      return function (groupIndex, item) {
-        return this.isGroupLastItemDisabled;
-      };
-    },
   },
   methods: {
-    addCard() {
-        const inputs = [this.inputOne, this.inputTwo, this.inputThr, this.inputFor, this.inputFiv];
-        const validInputs = inputs.filter(input => input !== null && input.trim() !== '');
-        const numItems = Math.max(3, Math.min(5, validInputs.length));
-        if (this.groupName) {
-          const newGroup = {
-            id: Date.now(),
-            groupName: this.groupName,
-            items: validInputs.slice(0, numItems).map(text => ({ text, checked: false }))
-          }
-          if (this.firstColumn.length < 3) {
-            this.firstColumn.push(newGroup)
-          }
-        }
-        this.groupName = null, this.inputOne = null, this.inputTwo = null, this.inputThr = null, this.inputFor = null, this.inputFiv = null
-        this.isFirstColumnDisabled = false;
-      },
-    updateProgress(card) {
-      const checkedCount = card.items.filter(item => item.checked).length;
-      const progress = (checkedCount / card.items.length) * 100;
-      card.isComplete = progress === 100;
-      if (card.isComplete) {
-        card.lastChecked = new Date().toLocaleString();
-      }
-      this.checkMoveCard();
-    },
-    MoveFirst() {
-      if (this.secondColumn.length >= 5) {
-        const isCardOver50Percent = this.secondColumn.some(card => {
-          const progress = (card.items.filter(item => item.checked).length / card.items.length) * 100;
-          return progress >= 50;
-        });
 
-        if (isCardOver50Percent) {
-          this.isFirstColumnDisabled = true;
-          this.firstColumn.forEach(card => {
-            card.isDisabled = true;
-          });
-          return;
-        }
-      }
-
-      this.isFirstColumnDisabled = false; // Сброс флага при возможности перемещения
-      this.firstColumn.forEach(card => {
-        const progress = (card.items.filter(item => item.checked).length / card.items.length) * 100;
-        const isMaxSecondColumn = this.secondColumn.length >= 5;
-        if (progress >= 50 && !isMaxSecondColumn) {
-          this.secondColumn.push(card);
-          this.firstColumn.splice(this.firstColumn.indexOf(card), 1);
-          this.MoveSecond();
-        }
-      });
-    },
-
-    MoveSecond() {
-      this.secondColumn.forEach(card => {
-        const progress = (card.items.filter(item => item.checked).length / card.items.length) * 100;
-        if (progress === 100) {
-          card.isComplete = true;
-          card.lastChecked = new Date().toLocaleString();
-          this.thirdColumn.push(card);
-          this.secondColumn.splice(this.secondColumn.indexOf(card), 1);
-          this.MoveFirst();
-        }
-      });
-      this.isFirstColumnDisabled = this.secondColumn.length >= 5;
-    },
-    saveData() {
-      const data = {
-        firstColumn: this.firstColumn,
-        secondColumn: this.secondColumn,
-        thirdColumn: this.thirdColumn
-      };
-      localStorage.setItem(storageKey, JSON.stringify(data));
-    },
-    checkMoveCard() {
-      this.MoveFirst();
-      this.MoveSecond();
-    },
   }
 })
