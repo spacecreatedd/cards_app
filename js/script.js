@@ -50,34 +50,45 @@ let app = new Vue({
     <div class="columns" style="display: flex; justify-content: space-evenly;">
       <div class="column">
         <h2>Первый столбец</h2>
-        <div class="card" v-for="(group, groupIndex) in firstColumn" :key="group.id">
+        <div class="card" v-for="(group, groupIndex) in firstColumn" :key="groupIndex">
           <h3>{{ group.groupName }}</h3>
+          <button @click="moveCardUp(groupIndex, 0)" :disabled="groupIndex === 0">вверх</button>
+          <button @click="moveCardDown(groupIndex, 0)" :disabled="groupIndex === firstColumn.length - 1">вниз</button>
+          <button @click="selectAllItems(groupIndex, 0)">Выделить все</button>
           <ul>
-            <li v-for="(item , itemIndex) in group.items" :key="item.id">
-              <input type="checkbox" v-model="item.checked" :disabled="isDisabled(groupIndex, item)" @change="updateProgress(group)">
+            <li v-for="(item , itemIndex) in group.items" :key="itemIndex">
+              <input type="checkbox" v-model="item.checked" :disabled="isDisabled(groupIndex, item, 0)" @change="updateProgress(group)">
               {{ item.text }}
             </li>
           </ul>
         </div>
       </div>
+
       <div class="column">
         <h2>Второй столбец</h2>
-        <div class="card" v-for="(group, groupIndex) in secondColumn" :key="group.id">
+        <div class="card" v-for="(group, groupIndex) in secondColumn" :key="groupIndex">
           <h3>{{ group.groupName }}</h3>
+          <button @click="moveCardUp(groupIndex, 1)" :disabled="groupIndex === 0">вверх</button>
+          <button @click="moveCardDown(groupIndex, 1)" :disabled="groupIndex === secondColumn.length - 1">вниз</button>
+<button @click="selectAllItems(groupIndex, 1)">Выделить все</button>
+
           <ul>
-            <li v-for="(item , itemIndex) in group.items" :key="item.id">
+            <li v-for="(item , itemIndex) in group.items" :key="itemIndex">
               <input type="checkbox" :disabled="item.checked" v-model="item.checked" @change="updateProgress(group)">
               {{ item.text }}
             </li>
           </ul>
         </div>
       </div>
+
       <div class="column">
         <h2>Третий столбец</h2>
-        <div class="card" v-for="group in thirdColumn" :key="group.id">
+        <div class="card" v-for="(group, groupIndex) in thirdColumn" :key="groupIndex">
           <h3>{{ group.groupName }}</h3>
+          <button @click="moveCardUp(groupIndex, 2)" :disabled="groupIndex === 0">вверх</button>
+          <button @click="moveCardDown(groupIndex, 2)" :disabled="groupIndex === thirdColumn.length - 1">вниз</button>
           <ul>
-            <li v-for="item in group.items" :key="item.id">
+            <li v-for="(item, itemIndex) in group.items" :key="itemIndex">
               <input type="checkbox" :disabled="item.checked" v-model="item.checked">
               {{ item.text }}
             </li>
@@ -129,11 +140,37 @@ let app = new Vue({
     },
   },
   methods: {
+    moveCardUp(groupIndex, columnIndex) {
+      const column = this.getColumn(columnIndex);
+
+      if (groupIndex > 0) {
+        const temp = column[groupIndex];
+        this.$set(column, groupIndex, column[groupIndex - 1]);
+        this.$set(column, groupIndex - 1, temp);
+      }
+    },
+
+    moveCardDown(groupIndex, columnIndex) {
+      const column = this.getColumn(columnIndex);
+
+      if (groupIndex < column.length - 1) {
+        const temp = column[groupIndex];
+        this.$set(column, groupIndex, column[groupIndex + 1]);
+        this.$set(column, groupIndex + 1, temp);
+      }
+    },
+
+    getColumn(columnIndex) {
+      return columnIndex === 0 ? this.firstColumn :
+             columnIndex === 1 ? this.secondColumn :
+             this.thirdColumn;
+    },
     addCard() {
         const inputs = [this.inputOne, this.inputTwo, this.inputThr, this.inputFor, this.inputFiv];
         const validInputs = inputs.filter(input => input !== null && input.trim() !== '');
         const numItems = Math.max(3, Math.min(5, validInputs.length));
-        if (this.groupName) {
+      
+        if (this.groupName && validInputs.length >= 3) {
           const newGroup = {
             id: Date.now(),
             groupName: this.groupName,
@@ -182,7 +219,18 @@ let app = new Vue({
         }
       });
     },
-
+    selectAllItems(groupIndex, columnIndex) {
+      const column = columnIndex === 0 ? this.firstColumn : this.secondColumn;
+      const group = column[groupIndex];
+    
+      if (group) {
+        group.items.forEach(item => {
+          item.checked = true;
+        });
+    
+        this.updateProgress(group);
+      }
+    },
     MoveSecond() {
       this.secondColumn.forEach(card => {
         const progress = (card.items.filter(item => item.checked).length / card.items.length) * 100;
